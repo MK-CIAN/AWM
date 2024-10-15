@@ -5,6 +5,8 @@ from django.contrib.auth import get_user_model, login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm
 from .models import Profile
 
+User = get_user_model()
+
 def set_user_location(user_id, latitude, longitude):
     user = User.objects.get(id=user_id)
     location = Point(longitude, latitude)  # Note: Point takes (longitude, latitude)
@@ -25,7 +27,7 @@ def login_view(request):
             return redirect('index')  # Redirect to the main map view
     else:
         form = AuthenticationForm()
-    return render(request, 'login.html', {'form': form})
+    return render(request, 'world/login.html', {'form': form})
 
 def logout_view(request):
     logout(request)
@@ -38,7 +40,7 @@ def map_view(request):
             location = user_profile.location
         except Profile.DoesNotExist:
             location = None
-        return render(request, 'map.html', {'user': request.user, 'location': location})
+        return render(request, 'world/map.html', {'user': request.user, 'location': location})
     else:
         return redirect('login')  # Redirect to login if not authenticated
     
