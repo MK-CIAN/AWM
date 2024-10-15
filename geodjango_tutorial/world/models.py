@@ -1,4 +1,5 @@
 from django.contrib.gis.db import models
+from django.contrib.auth import get_user_model
 
 class WorldBorder(models.Model):
     # Regular Django fields corresponding to the attributes in the
@@ -20,3 +21,14 @@ class WorldBorder(models.Model):
     # Returns the string representation of the model.
     def __str__(self):
         return self.name
+    
+#Store a point location on a user's profile.
+
+User = get_user_model()
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    location = models.PointField(null=True, blank=True)
+
+    def __str__(self):
+        return self.user.username
