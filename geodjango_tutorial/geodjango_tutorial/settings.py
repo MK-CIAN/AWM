@@ -11,19 +11,24 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
+import socket
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
+# DOCKER CONFIG VARIABLES HARD CODED
+PROJECT_NAME = 'geodjango_tutorial'
+POSTGIS_PORT = '5432'
+DEPLOY_SECURE = False
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!fkibx#4-0yg!szzmiqj+*$i_z$fkx9$u8g!w^t50&6!4e=x)0'
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+with open(os.path.join(BASE_DIR, 'secret_key.txt')) as f:
+    SECRET_KEY = f.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 ALLOWED_HOSTS = ['localhost','0.0.0.0', '127.0.0.1']
 
 
@@ -121,9 +126,40 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+STATIC_URL = '/static/'
+
+if socket.gethostname() == 'Cians-Air':
+    DATABASES["default"]["HOST"] = "localhost"
+    DATABASES["default"]["PORT"] = POSTGIS_PORT
+else:
+    DATABASES["default"]["HOST"] = "postgis"
+    DATABASES["default"]["PORT"] = 5432
 
 
-STATIC_URL = 'static/'
+if DEPLOY_SECURE:
+
+    DEBUG = False
+
+    TEMPLATES[0]["OPTIONS"]["debug"] = False
+
+    ALLOWED_HOSTS = ['.c21755919awm24.xyz', 'localhost',]
+
+    CSRF_COOKIE_SECURE = True
+
+    SESSION_COOKIE_SECURE = True
+else:
+
+    DEBUG = True
+
+    TEMPLATES[0]["OPTIONS"]["debug"] = True
+
+    ALLOWED_HOSTS = ['*', ]
+
+    CSRF_COOKIE_SECURE = False
+
+    SESSION_COOKIE_SECURE = False
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

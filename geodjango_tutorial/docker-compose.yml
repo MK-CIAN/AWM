@@ -32,6 +32,8 @@ services:
 
     awm_django_app:
         image: geodjango_tutorial_image
+        environment:
+            - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
         ports:
             - 8001:8001
         #build: .
