@@ -17,7 +17,7 @@ import socket
 # DOCKER CONFIG VARIABLES HARD CODED
 PROJECT_NAME = 'geodjango_tutorial'
 POSTGIS_PORT = '5432'
-DEPLOY_SECURE = False
+DEPLOY_SECURE = True
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -28,8 +28,7 @@ with open(os.path.join(BASE_DIR, 'secret_key.txt')) as f:
     SECRET_KEY = f.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-ALLOWED_HOSTS = ['localhost','0.0.0.0', '127.0.0.1']
+DEBUG = not DEPLOY_SECURE
 
 
 # Application definition
@@ -144,18 +143,23 @@ if DEPLOY_SECURE:
 
     TEMPLATES[0]["OPTIONS"]["debug"] = False
 
-    ALLOWED_HOSTS = ['.c21755919awm24.xyz', 'localhost',]
+    # Allow only specified hosts in production
+    ALLOWED_HOSTS = ['*.c21755919awm24.xyz', 'c21755919awm24.xyz', 'localhost', '127.0.0.1']
+    
 
     CSRF_COOKIE_SECURE = True
 
     SESSION_COOKIE_SECURE = True
+    # Specify trusted origin for CSRF checks
+    CSRF_TRUSTED_ORIGINS = ['https://c21755919awm24.xyz']
 else:
 
     DEBUG = True
 
     TEMPLATES[0]["OPTIONS"]["debug"] = True
 
-    ALLOWED_HOSTS = ['*', ]
+    # Allow all hosts in development
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
     CSRF_COOKIE_SECURE = False
 
