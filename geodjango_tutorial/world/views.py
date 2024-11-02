@@ -2,7 +2,9 @@ from django.contrib.gis.geos import Point
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth import get_user_model, login, logout, authenticate
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+
+from .forms import CustomUserCreationForm
 from .models import Profile
 
 User = get_user_model()
@@ -65,3 +67,14 @@ def update_location(request):
         else:
             return JsonResponse({'success': False, 'error': 'Missing coordinates'})
     return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+def register(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()  # Create the new user
+            return redirect('login')  # Redirect to login page after registration
+    else:
+        form = CustomUserCreationForm()
+    
+    return render(request, 'world/register.html', {'form': form})
