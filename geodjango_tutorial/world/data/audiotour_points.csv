@@ -1,0 +1,12 @@
+id,name,description,lon,lat,category
+1,Dublin Center,"Main center point of Dublin",-6.26031,53.349805,tourist
+3,Guinness Storehouse,"Explore the history of Guinness and enjoy panoramic views of Dublin from the Gravity Bar.",-6.2869,53.3419,tourist
+2,Tu Dublin,"Technological University of Dublin Campus",-6.281625,53.356464,education
+4,Phoenix Park,"One of the largest enclosed public parks in any capital city in Europe, featuring many historical sites and abundant wildlife.",-6.297456,53.348612,nature
+5,Trinity College Dublin,"Ireland's oldest university, founded in 1592, known for its historic architecture and the Book of Kells.",-6.259073,53.344456,education
+6,Dublin Castle,"A historic castle dating back to the 13th century, which served as the seat of British rule in Ireland until 1922.",-6.267555,53.343789,history
+7,Temple Bar,"Dublin's cultural quarter, famous for its lively pubs, art galleries, and historic cobbled streets.",-6.263101,53.345528,tourist
+8,St. Stephen's Green,"A scenic Victorian public park in the heart of Dublin, featuring gardens, sculptures, and wildlife.",-6.260594,53.339692,nature
+9,Grafton Street,"Dublin's most famous shopping street, known for its vibrant atmosphere, street performers, and high-end stores.",-6.259456,53.343112,tourist
+10,O'Connell Street,"Dublin's main thoroughfare, known for its historical monuments and role in Irish history.",-6.259327,53.347762,history
+11, Sculptures of Dublin,"A collection of public sculptures and monuments throughout Dublin, showcasing the city's history and culture.",-6.250947,53.341217,art

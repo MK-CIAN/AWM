@@ -11,21 +11,19 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
+import socket
+from dotenv import load_dotenv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+# Load environment variables from .env file
+load_dotenv()
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
+# DOCKER CONFIG VARIABLES
+POSTGIS_PORT = os.getenv('POSTGIS_PORT')
+DEPLOY_SECURE = os.getenv('DEPLOY_SECURE')
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!fkibx#4-0yg!szzmiqj+*$i_z$fkx9$u8g!w^t50&6!4e=x)0'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-ALLOWED_HOSTS = ['localhost','0.0.0.0', '127.0.0.1']
-
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Application definition
 
@@ -121,9 +119,46 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+STATIC_URL = '/static/'
 
 
-STATIC_URL = 'static/'
+if socket.gethostname() == 'Cians-Air':
+    DATABASES["default"]["HOST"] = "localhost"
+    DATABASES["default"]["PORT"] = POSTGIS_PORT
+else:
+    DATABASES["default"]["HOST"] = "postgis"
+    DATABASES["default"]["PORT"] = 5432
+
+
+if DEPLOY_SECURE:
+
+    DEBUG = False
+
+    TEMPLATES[0]["OPTIONS"]["debug"] = False
+
+    # Allow only specified hosts in production
+    ALLOWED_HOSTS = ['*.c21755919awm24.xyz', 'c21755919awm24.xyz', 'localhost', '127.0.0.1']
+    
+
+    CSRF_COOKIE_SECURE = True
+
+    SESSION_COOKIE_SECURE = True
+    # Specify trusted origin for CSRF checks
+    CSRF_TRUSTED_ORIGINS = ['https://c21755919awm24.xyz']
+else:
+
+    DEBUG = True
+
+    TEMPLATES[0]["OPTIONS"]["debug"] = True
+
+    # Allow all hosts in development
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+
+    CSRF_COOKIE_SECURE = False
+
+    SESSION_COOKIE_SECURE = False
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

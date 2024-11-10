@@ -1,0 +1,152 @@
+{% extends 'world/base.html' %}
+{% load static %}
+
+{% block title %}Map{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
+<link rel="stylesheet" href="{% static 'admin/css/styles.css' %}">
+{% endblock %}
+
+{% block content %}
+<h2>AudioTours Near You</h2>
+
+<form method="get" action="{% url 'map_view' %}">
+    <label for="category-select">Filter by Category:</label>
+    <select name="category" id="category-select" onchange="this.form.submit()">
+        <option value="all" {% if selected_category == "all" %}selected{% endif %}>All Categories</option>
+        {% for value, label in categories %}
+            <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+</form>
+
+<div id="map" style="height: 800px;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script>
+    var map = L.map('map').setView([0, 0], 2);
+
+    // Regular map view
+    var streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Satellite view
+    var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+    });
+
+    // Layer control to toggle between street and satellite views
+    var baseMaps = {
+        "Street View": streetLayer,
+        "Satellite View": satelliteLayer
+    };
+    L.control.layers(baseMaps).addTo(map);
+
+    var redIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+
+    var marker, circle, currentPolyline;
+    var markers = L.markerClusterGroup(); // Cluster group for main points only
+    let currentSubpointMarkers = [];
+    let isSubpointsVisible = false;
+
+    // Update the map with user's location
+    function updateMap(latitude, longitude, accuracy) {
+        if (marker) {
+            marker.setLatLng([latitude, longitude]);
+            circle.setLatLng([latitude, longitude]).setRadius(accuracy);
+        } else {
+            marker = L.marker([latitude, longitude], { icon: redIcon }).addTo(map);
+            circle = L.circle([latitude, longitude], { radius: accuracy }).addTo(map);
+            map.setView([latitude, longitude], 13);
+        }
+    }
+
+    // Fetch and update user's geolocation at intervals
+    function updateLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    updateMap(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+
+                    fetch('{% url "update_location" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: 'latitude=' + position.coords.latitude + '&longitude=' + position.coords.longitude
+                    });
+                }
+            );
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateLocation();
+        setInterval(updateLocation, 30000);
+    });
+
+    // Add subpoints to the map
+    function addSubpoints(subpoints) {
+        subpoints.forEach(function(subpoint) {
+            const subpointMarker = L.marker([subpoint.lat, subpoint.lon])
+                .bindPopup(`<b>${subpoint.name}</b>`);
+            subpointMarker.addTo(map);
+            currentSubpointMarkers.push(subpointMarker);
+        });
+    }
+
+    // Remove subpoints from the map
+    function clearSubpoints() {
+        currentSubpointMarkers.forEach(marker => map.removeLayer(marker));
+        currentSubpointMarkers = [];
+    }
+
+    // Draw route from main point to subpoints
+    function drawRoute(mainPoint, subpoints) {
+        if (currentPolyline) {
+            map.removeLayer(currentPolyline);
+        }
+        const routeCoordinates = [[mainPoint.lat, mainPoint.lon], ...subpoints.map(sp => [sp.lat, sp.lon])];
+        currentPolyline = L.polyline(routeCoordinates, { color: 'blue', weight: 3 }).addTo(map);
+    }
+
+    const audiotourPoints = {{ audiotour_points_json|default:"[]"|safe }};
+    
+    // Display main audiotour points on the map using clusters
+    audiotourPoints.forEach(function(point) {
+        const mainMarker = L.marker([point.lat, point.lon])
+            .bindPopup(`<b>${point.name}</b><br>${point.description}`);
+        markers.addLayer(mainMarker);
+
+        // Toggle subpoints and route when clicking on main marker
+        mainMarker.on('click', function() {
+            if (isSubpointsVisible) {
+                clearSubpoints();
+                if (currentPolyline) {
+                    map.removeLayer(currentPolyline);
+                }
+                isSubpointsVisible = false;
+            } else {
+                addSubpoints(point.subpoints);
+                drawRoute(point, point.subpoints);
+                isSubpointsVisible = true;
+            }
+        });
+    });
+
+    map.addLayer(markers);
+</script>
+{% endblock %}
