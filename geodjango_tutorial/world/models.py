@@ -35,6 +35,34 @@ class Profile(models.Model):
     def __str__(self):
         return self.user.username
     
+class AudiotourPoints(models.Model):
+    CATEGORY_CHOICES = [
+        ('art', 'Art'),
+        ('history', 'History'),
+        ('tourist', 'Tourist Attractions'),
+        ('nature', 'Nature'),
+        ('education', 'Education'),
+        # Add more categories as needed
+    ]
+
+    name = models.CharField(max_length=50)
+    description = models.CharField(max_length=200)
+    lon = models.FloatField()
+    lat = models.FloatField()
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='tourist')  # New field
+
+    def __str__(self):
+        return self.name
+
+class AudiotourSubpoints(models.Model):
+    audiotour = models.ForeignKey(AudiotourPoints, related_name="subpoints", on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    lon = models.FloatField()
+    lat = models.FloatField()
+    
+    def __str__(self):
+        return f"{self.audiotour.name} - {self.name}"
+    
 # Signal to automatically create a Profile when a new User is created
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

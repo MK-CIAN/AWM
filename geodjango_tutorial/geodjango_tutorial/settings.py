@@ -13,23 +13,17 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 import socket
+from dotenv import load_dotenv
 
-# DOCKER CONFIG VARIABLES HARD CODED
-PROJECT_NAME = 'geodjango_tutorial'
-POSTGIS_PORT = '5432'
-DEPLOY_SECURE = True
+# Load environment variables from .env file
+load_dotenv()
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
+# DOCKER CONFIG VARIABLES
+POSTGIS_PORT = os.getenv('POSTGIS_PORT')
+DEPLOY_SECURE = os.getenv('DEPLOY_SECURE')
 
-# SECURITY WARNING: keep the secret key used in production secret!
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-with open(os.path.join(BASE_DIR, 'secret_key.txt')) as f:
-    SECRET_KEY = f.read().strip()
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = not DEPLOY_SECURE
-
 
 # Application definition
 
@@ -128,6 +122,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 STATIC_URL = '/static/'
+
 
 if socket.gethostname() == 'Cians-Air':
     DATABASES["default"]["HOST"] = "localhost"
