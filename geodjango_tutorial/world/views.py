@@ -1,3 +1,4 @@
+from urllib import response
 from django.contrib.gis.geos import Point
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
@@ -133,3 +134,4 @@ def register(request):
         form = CustomUserCreationForm()
     
     return render(request, 'world/register.html', {'form': form})
+

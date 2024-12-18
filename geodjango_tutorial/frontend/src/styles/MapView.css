@@ -1,0 +1,25 @@
+/* Center the map on the page and make it large */
+.map-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 90vh; /* Take up most of the screen height */
+    width: 100%;
+    margin: 0 auto; /* Center horizontally */
+  }
+  
+  .map {
+    height: 100%;
+    width: 80%; /* Adjust to your desired width */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Add a subtle shadow */
+    border: 1px solid #ccc; /* Optional: border for the map */
+    border-radius: 8px; /* Optional: rounded corners */
+  }
+  
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.8em;
+    color: #333;
+  }
+  

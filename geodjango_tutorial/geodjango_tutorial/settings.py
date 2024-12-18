@@ -21,11 +21,9 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # DOCKER CONFIG VARIABLES
 POSTGIS_PORT = os.getenv('POSTGIS_PORT')
-DEPLOY_SECURE = os.getenv('DEPLOY_SECURE')
+DEPLOY_SECURE = os.getenv('DEPLOY_SECURE', 'False').lower() == 'true'
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -35,15 +33,20 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.gis',
-    'world.apps.WorldConfig'
+    'world.apps.WorldConfig',
+    'rest_framework',  # Django REST Framework
+    'corsheaders',  # CORS Headers support
+    'api',
+    'knox',
 ]
 
 MIDDLEWARE = [
+    'geodjango_tutorial.middleware.TestCORSMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -104,6 +107,18 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# REST Framework configuration
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'knox.auth.TokenAuthentication',  # Knox token authentication
+        'rest_framework.authentication.BasicAuthentication',  # Optional
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',  # Require authentication by default
+    ],
+}
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -133,34 +148,28 @@ else:
 
 
 if DEPLOY_SECURE:
-
     DEBUG = False
-
     TEMPLATES[0]["OPTIONS"]["debug"] = False
 
-    # Allow only specified hosts in production
+    # Production-specific settings
     ALLOWED_HOSTS = ['*.c21755919awm24.xyz', 'c21755919awm24.xyz', 'localhost', '127.0.0.1']
-    
 
-    CSRF_COOKIE_SECURE = True
-
-    SESSION_COOKIE_SECURE = True
-    # Specify trusted origin for CSRF checks
-    CSRF_TRUSTED_ORIGINS = ['https://c21755919awm24.xyz']
+    CORS_ALLOWED_ORIGINS = ['https://c21755919awm24.xyz']
 else:
-
     DEBUG = True
-
     TEMPLATES[0]["OPTIONS"]["debug"] = True
 
-    # Allow all hosts in development
+    # Development-specific settings
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
-    CSRF_COOKIE_SECURE = False
 
-    SESSION_COOKIE_SECURE = False
+    # Allow all origins during development
+    CORS_ALLOWED_ALL_ORIGINS = True
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
