@@ -1,25 +1,137 @@
-/* Center the map on the page and make it large */
-.map-container {
+/* MapView.css */
+
+/* Reset global styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  html, body {
+    height: 100%;
+    font-family: Arial, sans-serif;
+    background: rgb(85, 69, 230);
+    background: linear-gradient(
+      333deg,
+      rgba(85, 69, 230, 0.71) 0%,
+      rgba(36, 40, 142, 0.85) 50%,
+      rgba(0, 11, 255, 1) 100%
+    );
+    color: #fff;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    border-radius: 0 0 12px 12px;
+  }
+  
+  .header h2 {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #fff;
+  }
+  
+  .logout-button {
+    background-color: rgba(85, 69, 230, 0.9);
+    color: #fff;
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  
+  .logout-button:hover {
+    background-color: rgba(36, 40, 142, 1);
+    transform: scale(1.05);
+  }
+  
+  .category-filter {
+    display: flex;
+    justify-content: center;
+    margin: 1rem 0;
+  }
+  
+  .category-filter form {
+    background-color: #fff;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  .category-filter label {
+    color: #333;
+    font-weight: bold;
+    margin-right: 0.75rem;
+  }
+  
+  .category-filter select {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    color: #333;
+    outline: none;
+  }
+  
+  .category-filter select:focus {
+    border-color: rgba(85, 69, 230, 0.8);
+    box-shadow: 0 0 5px rgba(85, 69, 230, 0.5);
+  }
+  
+  /* Map container styling */
+  .map-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 90vh; /* Take up most of the screen height */
-    width: 100%;
-    margin: 0 auto; /* Center horizontally */
+    height: 75vh;
+    margin: 1rem auto;
+    width: 90%;
+    max-width: 1200px;
   }
   
   .map {
+    width: 100%;
     height: 100%;
-    width: 80%; /* Adjust to your desired width */
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Add a subtle shadow */
-    border: 1px solid #ccc; /* Optional: border for the map */
-    border-radius: 8px; /* Optional: rounded corners */
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(85, 69, 230, 0.5);
   }
   
-  h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    font-size: 1.8em;
-    color: #333;
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .header {
+      flex-direction: column;
+      text-align: center;
+    }
+  
+    .header h2 {
+      margin-bottom: 0.75rem;
+    }
+  
+    .logout-button {
+      margin-top: 0.5rem;
+    }
+  
+    .map-container {
+      height: 60vh;
+    }
+  
+    .category-filter form {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .category-filter label {
+      margin-bottom: 0.5rem;
+    }
   }
   

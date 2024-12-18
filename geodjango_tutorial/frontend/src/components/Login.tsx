@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Axios from '../services/Axios';
 import { useNavigate } from 'react-router-dom';
+import '../styles/Auth.css'; // Add a shared CSS file for styling
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -12,38 +13,43 @@ const Login: React.FC = () => {
     e.preventDefault();
     try {
       const response = await Axios.post('login/', { username, password });
-      const token = response.data.token; // Get the token from response
-      localStorage.setItem('token', token); // Store token in localStorage
-      navigate('/map'); // Redirect to the map view on successful login
+      const token = response.data.token;
+      localStorage.setItem('token', token);
+      navigate('/map');
     } catch (err) {
       setError('Invalid username or password.');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Login</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <div>
-        <label>Username:</label>
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-      </div>
-      <div>
-        <label>Password:</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </div>
-      <button type="submit">Login</button>
-    </form>
+    <div className="auth-container">
+      <form onSubmit={handleSubmit} className="auth-form">
+        <h2>Login to <span className="highlight">Event Hub</span></h2>
+        {error && <p className="error-message">{error}</p>}
+        <div className="form-group">
+          <label>Username</label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label>Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <button type="submit" className="auth-button">Login</button>
+        <p className="redirect-link">
+          Don't have an account? <a href="/register">Register here</a>
+        </p>
+      </form>
+    </div>
   );
 };
 

@@ -76,11 +76,11 @@ const MapView: React.FC = () => {
   // Handle user logout
   const handleLogout = async () => {
     try {
-      await Axios.post('logout/'); // Call backend logout endpoint
-      localStorage.removeItem('token'); // Remove token from localStorage
-      navigate('/login'); // Redirect to login page
+      await Axios.post("logout/"); // Call backend logout endpoint
+      localStorage.removeItem("token"); // Remove token from localStorage
+      navigate("/login"); // Redirect to login page
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error("Error logging out:", error);
     }
   };
 
@@ -97,9 +97,11 @@ const MapView: React.FC = () => {
           Logout
         </button>
       </div>
-      <CategoryFilter setSelectedCategory={setSelectedCategory} />
 
-      {/* Centered and styled map */}
+      <div className="category-filter">
+        <CategoryFilter setSelectedCategory={setSelectedCategory} />
+      </div>
+
       <div className="map-container">
         <MapContainer center={[0, 0]} zoom={2} className="map">
           <TileLayer

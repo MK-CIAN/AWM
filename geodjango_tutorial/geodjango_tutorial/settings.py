@@ -162,7 +162,6 @@ else:
     # Development-specific settings
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
-
     # Allow all origins during development
     CORS_ALLOWED_ALL_ORIGINS = True
 
