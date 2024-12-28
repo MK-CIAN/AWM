@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
+import React, { useEffect, useState, useRef } from "react";
+import { MapContainer, TileLayer, Marker, Popup, Circle} from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import Axios from "../services/Axios"; // Import Axios instance
@@ -8,6 +8,7 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "../styles/MapView.css";
 import { useNavigate } from "react-router-dom";
+import ClosestEvents from "./ClosestEvents";
 
 // Custom marker icon for React-Leaflet
 const redIcon = new L.Icon({
@@ -21,32 +22,69 @@ const redIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-// Types for data
-interface AudiotourPoint {
+interface EventPoint {
   id: number;
   name: string;
   description: string;
   lat: number;
   lon: number;
+  location: string;
+  date: string;
+  category: string;
+  external_link: string;
+  image_url: string;
 }
 
+// Grouping function to aggregate events by name
+const groupEventsByName = (events: EventPoint[]) => {
+  const grouped: { [key: string]: EventPoint & { dates: string[] } } = {};
+
+  events.forEach((event) => {
+    const key = `${event.name}-${event.lat}-${event.lon}`;
+
+    if (!grouped[key]) {
+      grouped[key] = { ...event, dates: [event.date] };
+    } else {
+      grouped[key].dates.push(event.date);
+    }
+  });
+
+  return Object.values(grouped);
+};
+
+const formatDate = (dateString: string) => {
+  const options: Intl.DateTimeFormatOptions = {
+    weekday: "long",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  };
+  const date = new Date(dateString);
+  return date.toLocaleDateString(undefined, options);
+};
+
+
 const MapView: React.FC = () => {
-  const [audiotourPoints, setAudiotourPoints] = useState<AudiotourPoint[]>([]);
+  const [events, setEvents] = useState<EventPoint[]>([]);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     null
   );
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const navigate = useNavigate();
 
-  // Fetch audiotour points from API
-  const fetchAudiotourPoints = async (category: string) => {
+  const mapRef = useRef<L.Map | null>(null);
+
+  const fetchEvents = async (category: string) => {
     try {
-      const response = await Axios.get<AudiotourPoint[]>(
-        `audiotour-points/?category=${category}`
+      const encodedCategory = encodeURIComponent(category); // Encode the category
+      const response = await Axios.get<EventPoint[]>(
+        `events/?category=${encodedCategory}`
       );
-      setAudiotourPoints(response.data);
+      setEvents(response.data);
     } catch (error) {
-      console.error("Error fetching audiotour points:", error);
+      console.error("Error fetching events:", error);
     }
   };
 
@@ -85,9 +123,34 @@ const MapView: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchAudiotourPoints(selectedCategory);
-    updateUserLocation(); // Update location once when the component mounts
+    fetchEvents(selectedCategory);
+    updateUserLocation();
   }, [selectedCategory]);
+
+  const groupedEvents = groupEventsByName(events);
+
+  // Store map instance
+  const handleMapLoad = (map: L.Map) => {
+    mapRef.current = map;
+  };
+
+  const handleMarkerClick = (marker: L.Marker) => {
+    const popupLatLng = marker.getLatLng();
+    if (mapRef.current && popupLatLng) {
+      const currentZoom = mapRef.current.getZoom();
+      const offsetLat = popupLatLng.lat - (currentZoom > 14 ? 0.002 : 0.005); // Offset to shift down
+      const offsetLatLng = L.latLng(offsetLat, popupLatLng.lng);
+      
+      mapRef.current.flyTo(offsetLatLng, Math.max(currentZoom, 14), {
+        animate: true,
+        duration: 1,
+      });
+
+      // Open the popup
+      marker.openPopup();
+    }
+  };
+
 
   return (
     <div>
@@ -102,36 +165,84 @@ const MapView: React.FC = () => {
         <CategoryFilter setSelectedCategory={setSelectedCategory} />
       </div>
 
-      <div className="map-container">
-        <MapContainer center={[0, 0]} zoom={2} className="map">
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; OpenStreetMap contributors"
-          />
-          <MarkerClusterGroup>
-            {audiotourPoints.map((point) => (
-              <Marker
-                key={point.id}
-                position={[point.lat, point.lon]}
-                icon={redIcon}
-              >
-                <Popup>
-                  <strong>{point.name}</strong>
-                  <p>{point.description}</p>
-                </Popup>
-              </Marker>
-            ))}
-          </MarkerClusterGroup>
+      <div className="map-and-events">
+        {/* Closest Events Section */}
+        <ClosestEvents userLocation={userLocation} />
 
-          {userLocation && (
-            <>
-              <Marker position={userLocation} icon={redIcon}>
-                <Popup>Your Location</Popup>
-              </Marker>
-              <Circle center={userLocation} radius={500} />
-            </>
-          )}
-        </MapContainer>
+        <div className="map-container">
+            <MapContainer
+              center={[53.3498, -6.2603]}
+              zoom={10}
+              className="map"
+              whenReady={() => handleMapLoad(mapRef.current!)}
+            >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution="&copy; OpenStreetMap contributors"
+            />
+            <MarkerClusterGroup>
+              {groupedEvents.map((event) => (
+                <Marker
+                  key={event.id}
+                  position={[event.lat, event.lon]}
+                  icon={redIcon}
+                  eventHandlers={{
+                    click: (e) => handleMarkerClick(e.target),
+                  }}
+                >
+                  <Popup>
+                    <strong>{event.name}</strong>
+                    {event.image_url ? (
+                      <img
+                        src={event.image_url}
+                        alt={event.name}
+                        style={{
+                          width: "100%",
+                          maxHeight: "150px",
+                          objectFit: "cover",
+                          borderRadius: "8px",
+                        }}
+                      />
+                    ) : (
+                      <p>No Image Available</p>
+                    )}
+                    <p>{event.description}</p>
+                    <p>
+                      <strong>Location:</strong>{" "}
+                      {event.location || "Location not available"}
+                    </p>
+                    <p><strong>Show Dates:</strong></p>
+                    <div className="popup-scroll">
+                      <ul>
+                        {event.dates.map((date) => (
+                          <li key={date}>{formatDate(date)}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <p>
+                      <a
+                        href={event.external_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        More Info
+                      </a>
+                    </p>
+                  </Popup>
+                </Marker>
+              ))}
+            </MarkerClusterGroup>
+
+            {userLocation && (
+              <>
+                <Marker position={userLocation} icon={redIcon}>
+                  <Popup>Your Location</Popup>
+                </Marker>
+                <Circle center={userLocation} radius={500} />
+              </>
+            )}
+          </MapContainer>
+        </div>
       </div>
     </div>
   );
@@ -153,11 +264,9 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
       <label>Filter by Category:</label>
       <select onChange={handleChange}>
         <option value="all">All Categories</option>
-        <option value="art">Art</option>
-        <option value="history">History</option>
-        <option value="tourist">Tourist Attractions</option>
-        <option value="nature">Nature</option>
-        <option value="education">Education</option>
+        <option value="Music">Music</option>
+        <option value="Arts & Theatre">Arts & Theatre</option>
+        <option value="Sports">Sports</option>
       </select>
     </form>
   );

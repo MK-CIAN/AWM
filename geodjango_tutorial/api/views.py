@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from knox.auth import TokenAuthentication
 from knox.models import AuthToken
-from world.models import AudiotourPoints, Profile
+from world.models import AudiotourPoints, Profile, Event
 
 
 @api_view(['POST'])
@@ -113,3 +113,32 @@ def update_location_api(request):
         profile.save()
         return Response({"success": True}, status=200)
     return Response({"success": False, "error": "Invalid request"}, status=400)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def fetch_events_api(request):
+    """
+    API endpoint for fetching events.
+    """
+    category = request.GET.get('category', 'all')
+    if category == 'all':
+        events = Event.objects.all()
+    else:
+        events = Event.objects.filter(category=category)
+
+    data = [
+        {
+            "id": event.id,
+            "name": event.name,
+            "description": event.description,
+            "lat": event.latitude,
+            "lon": event.longitude,
+            "location": event.location,
+            "date": event.date,
+            "category": event.category,
+            "external_link": event.external_link,
+            "image_url": event.image_url
+        }
+        for event in events
+    ]
+    return Response(data, status=200)

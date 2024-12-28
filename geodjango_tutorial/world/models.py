@@ -72,3 +72,22 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
+
+
+class Event(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    location = models.CharField(max_length=255, null=True, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    date = models.DateTimeField()
+    category = models.CharField(max_length=100, null=True, blank=True)
+    external_link = models.URLField()  # Link to the event page
+    api_source = models.CharField(max_length=50, null=True, blank=True)  # Source of event (e.g., Eventbrite, Ticketmaster)
+    event_id = models.CharField(max_length=255, unique=True)  # Unique identifier from the API
+    image_url = models.URLField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name

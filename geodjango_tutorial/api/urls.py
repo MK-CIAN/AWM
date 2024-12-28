@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import audiotour_points_api, update_location_api, login_view, logout_view, register_api, user_info
+from .views import audiotour_points_api, update_location_api, login_view, logout_view, register_api, user_info, fetch_events_api
 from . import views
 
 urlpatterns = [
@@ -9,4 +9,5 @@ urlpatterns = [
     path('audiotour-points/', audiotour_points_api, name='audiotour-points'),
     path('update-location/', update_location_api, name='update-location'),
     path('user-info/', user_info, name='user-info'),
+    path('events/', fetch_events_api, name='fetch_events_api'),
 ]
