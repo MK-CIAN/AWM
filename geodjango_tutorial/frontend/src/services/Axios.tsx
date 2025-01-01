@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-// Create an instance of axios with a custom configuration
+// Creating an instance of axios
 const Axios = axios.create({
-  baseURL: 'http://127.0.0.1:8001/api/', // Base URL for your API
+  baseURL: 'https://c21755919awm24.xyz/api/', // Base URL
   timeout: 10000, // Request timeout (10 seconds)
   headers: {
     'Content-Type': 'application/json',
@@ -10,11 +10,11 @@ const Axios = axios.create({
   },
 });
 
-// Add a request interceptor to include the Knox token
+// Adding a request interceptor to include the Knox token
 Axios.interceptors.request.use(
   (config) => {
-    // Add Knox token to Authorization header if available
-    const token = localStorage.getItem('token'); // Replace 'localStorage' with 'sessionStorage' or another store if needed
+    // Adding Knox token to Authorization header
+    const token = localStorage.getItem('token'); //Check if token is stored in local storage
     if (token) {
       config.headers['Authorization'] = `Token ${token}`;
     }
@@ -25,7 +25,7 @@ Axios.interceptors.request.use(
   }
 );
 
-// Optional: Add a response interceptor for error handling
+// Adding a response interceptor for error handling
 Axios.interceptors.response.use(
   (response) => response, // Pass successful responses through
   (error) => {

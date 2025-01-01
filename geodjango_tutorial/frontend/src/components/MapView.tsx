@@ -1,16 +1,17 @@
 import React, { useEffect, useState, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Circle} from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
-import Axios from "../services/Axios"; // Import Axios instance
+import Axios from "../services/Axios";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "../styles/MapView.css";
 import { useNavigate } from "react-router-dom";
 import ClosestEvents from "./ClosestEvents";
+import Navbar from "./Navbar";
 
-// Custom marker icon for React-Leaflet
+// Custom Red Marker
 const redIcon = new L.Icon({
   iconUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
@@ -22,6 +23,7 @@ const redIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
+// Event Interface
 interface EventPoint {
   id: number;
   name: string;
@@ -35,7 +37,7 @@ interface EventPoint {
   image_url: string;
 }
 
-// Grouping function to aggregate events by name
+// Grouping function to aggregate events by name to avoid duplicate markers
 const groupEventsByName = (events: EventPoint[]) => {
   const grouped: { [key: string]: EventPoint & { dates: string[] } } = {};
 
@@ -52,6 +54,7 @@ const groupEventsByName = (events: EventPoint[]) => {
   return Object.values(grouped);
 };
 
+// Format date string to make it more readable
 const formatDate = (dateString: string) => {
   const options: Intl.DateTimeFormatOptions = {
     weekday: "long",
@@ -65,24 +68,28 @@ const formatDate = (dateString: string) => {
   return date.toLocaleDateString(undefined, options);
 };
 
-
+// Main MapView Component
 const MapView: React.FC = () => {
   const [events, setEvents] = useState<EventPoint[]>([]);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     null
   );
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [filteredEvents, setFilteredEvents] = useState<EventPoint[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const navigate = useNavigate();
 
   const mapRef = useRef<L.Map | null>(null);
 
+  // Fetch events based on category
   const fetchEvents = async (category: string) => {
     try {
-      const encodedCategory = encodeURIComponent(category); // Encode the category
+      const encodedCategory = encodeURIComponent(category); // Encoding category string due to previous problems
       const response = await Axios.get<EventPoint[]>(
         `events/?category=${encodedCategory}`
       );
       setEvents(response.data);
+      setFilteredEvents(response.data); // Initialize filteredEvents with all events
     } catch (error) {
       console.error("Error fetching events:", error);
     }
@@ -111,58 +118,75 @@ const MapView: React.FC = () => {
     }
   };
 
-  // Handle user logout
-  const handleLogout = async () => {
-    try {
-      await Axios.post("logout/"); // Call backend logout endpoint
-      localStorage.removeItem("token"); // Remove token from localStorage
-      navigate("/login"); // Redirect to login page
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
-  };
-
+  // Fetch events and update user location on load
   useEffect(() => {
     fetchEvents(selectedCategory);
     updateUserLocation();
+
+    // Set up interval to update location every 30 seconds
+    const locationInterval = setInterval(() => {
+      updateUserLocation();
+    }, 30000); // 30 seconds in milliseconds
+
+    // Clean up interval on component unmount
+    return () => clearInterval(locationInterval);
   }, [selectedCategory]);
 
-  const groupedEvents = groupEventsByName(events);
+  // Filter events by search term dynamically
+  useEffect(() => {
+    const filtered = events.filter((event) =>
+      event.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredEvents(filtered);
+  }, [searchTerm, events]);
+
+  // Use filtered events for rendering on the map
+  const groupedEvents = groupEventsByName(filteredEvents);
 
   // Store map instance
   const handleMapLoad = (map: L.Map) => {
     mapRef.current = map;
   };
 
+  // Center map on marker click
   const handleMarkerClick = (marker: L.Marker) => {
     const popupLatLng = marker.getLatLng();
     if (mapRef.current && popupLatLng) {
       const currentZoom = mapRef.current.getZoom();
-      const offsetLat = popupLatLng.lat - (currentZoom > 14 ? 0.002 : 0.005); // Offset to shift down
+      const offsetLat = popupLatLng.lat - (currentZoom > 14 ? 0.002 : 0.005);
       const offsetLatLng = L.latLng(offsetLat, popupLatLng.lng);
-      
+
       mapRef.current.flyTo(offsetLatLng, Math.max(currentZoom, 14), {
         animate: true,
         duration: 1,
       });
 
-      // Open the popup
       marker.openPopup();
     }
   };
 
+  // Handle redirection to event detail page
+  const handleRedirectToEvent = (eventId: number) => {
+    navigate(`/events/${eventId}`);
+  };
 
   return (
     <div>
-      <div className="header">
-        <h2>Event Hub</h2>
-        <button onClick={handleLogout} className="logout-button">
-          Logout
-        </button>
-      </div>
+      <Navbar />
 
-      <div className="category-filter">
-        <CategoryFilter setSelectedCategory={setSelectedCategory} />
+      <div className="filter-search-container">
+        <div className="category-filter">
+          <CategoryFilter setSelectedCategory={setSelectedCategory} />
+        </div>
+
+        <div className="search-bar">
+          <input
+            type="text"
+            placeholder="Search events..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="map-and-events">
@@ -170,12 +194,12 @@ const MapView: React.FC = () => {
         <ClosestEvents userLocation={userLocation} />
 
         <div className="map-container">
-            <MapContainer
-              center={[53.3498, -6.2603]}
-              zoom={10}
-              className="map"
-              whenReady={() => handleMapLoad(mapRef.current!)}
-            >
+          <MapContainer
+            center={[53.3498, -6.2603]}
+            zoom={10}
+            className="map"
+            whenReady={() => handleMapLoad(mapRef.current!)}
+          >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution="&copy; OpenStreetMap contributors"
@@ -211,7 +235,9 @@ const MapView: React.FC = () => {
                       <strong>Location:</strong>{" "}
                       {event.location || "Location not available"}
                     </p>
-                    <p><strong>Show Dates:</strong></p>
+                    <p>
+                      <strong>Show Dates:</strong>
+                    </p>
                     <div className="popup-scroll">
                       <ul>
                         {event.dates.map((date) => (
@@ -219,15 +245,12 @@ const MapView: React.FC = () => {
                         ))}
                       </ul>
                     </div>
-                    <p>
-                      <a
-                        href={event.external_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        More Info
-                      </a>
-                    </p>
+                    <button
+                      onClick={() => handleRedirectToEvent(event.id)}
+                      className="button"
+                    >
+                      More Info
+                    </button>
                   </Popup>
                 </Marker>
               ))}
@@ -248,10 +271,12 @@ const MapView: React.FC = () => {
   );
 };
 
+// Category Filter Interface
 interface CategoryFilterProps {
   setSelectedCategory: React.Dispatch<React.SetStateAction<string>>;
 }
 
+// Category Filter Component
 const CategoryFilter: React.FC<CategoryFilterProps> = ({
   setSelectedCategory,
 }) => {
@@ -259,6 +284,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
     setSelectedCategory(e.target.value);
   };
 
+  // Filter by Category Dropdown
   return (
     <form>
       <label>Filter by Category:</label>

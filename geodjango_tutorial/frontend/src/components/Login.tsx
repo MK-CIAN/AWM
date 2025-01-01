@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import Axios from '../services/Axios';
 import { useNavigate } from 'react-router-dom';
-import '../styles/Auth.css'; // Add a shared CSS file for styling
+import '../styles/Auth.css';
 
+// Login component
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {

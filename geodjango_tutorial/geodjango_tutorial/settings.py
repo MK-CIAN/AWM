@@ -45,6 +45,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -155,6 +156,7 @@ if DEPLOY_SECURE:
     ALLOWED_HOSTS = ['*.c21755919awm24.xyz', 'c21755919awm24.xyz', 'localhost', '127.0.0.1']
 
     CORS_ALLOWED_ORIGINS = ['https://c21755919awm24.xyz']
+    CSRF_TRUSTED_ORIGINS = ['https://c21755919awm24.xyz']
 else:
     DEBUG = True
     TEMPLATES[0]["OPTIONS"]["debug"] = True

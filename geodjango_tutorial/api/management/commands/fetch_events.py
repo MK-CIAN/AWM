@@ -6,18 +6,16 @@ from dotenv import load_dotenv
 import os
 
 class Command(BaseCommand):
-    help = "Fetch events from Ticketmaster API and store/update them in the database."
-
     load_dotenv()
 
     def handle(self, *args, **kwargs):
-        # Fetch Ticketmaster API key from environment variables
+        # Fetching Ticketmaster API key from environment variables for safer storing
         TICKETMASTER_API_KEY = os.getenv('TICKETMASTER_API_KEY')
         if not TICKETMASTER_API_KEY:
             self.stderr.write(self.style.ERROR("Ticketmaster API key is not set in environment variables."))
             return
 
-        # API endpoint and parameters
+        # API endpoint
         url = "https://app.ticketmaster.com/discovery/v2/events.json"
         today = now()
         next_month = today + timedelta(days=30)
@@ -25,13 +23,13 @@ class Command(BaseCommand):
         params = {
             "apikey": TICKETMASTER_API_KEY,
             "countryCode": "IE",  # Ireland
-            "radius": 100,        # Radius in miles
+            "radius": 300,        # Radius in miles
             "unit": "miles",
             "latlong": "53.3498,-6.2603",  # Latitude and Longitude of Dublin
-            "sort": "date,asc",   # Sort by date (ascending)
-            "startDateTime": today.isoformat().split('.')[0] + 'Z',  # Remove fractional seconds and add 'Z'
-            "endDateTime": next_month.isoformat().split('.')[0] + 'Z',  # One month from today
-            "size": 200,  # Number of events per page (max supported by Ticketmaster is 200)
+            "sort": "date,asc",   # Sort by date
+            "startDateTime": today.isoformat().split('.')[0] + 'Z',
+            "endDateTime": next_month.isoformat().split('.')[0] + 'Z',
+            "size": 200,  # Number of events per page (max is 200)
         }
 
         page = 0  # Start with the first page
@@ -44,7 +42,7 @@ class Command(BaseCommand):
                 response.raise_for_status()
                 data = response.json()
 
-                # Extract events from the response
+                # Extracting the events from the response
                 events_data = data.get("_embedded", {}).get("events", [])
                 for event_data in events_data:
                     event_id = event_data.get("id")
@@ -53,11 +51,11 @@ class Command(BaseCommand):
 
                     venue = event_data.get("_embedded", {}).get("venues", [{}])[0]
 
-                    # Extract the image URL (choosing the first image or a large one)
+                    # Extract the image URL
                     images = event_data.get("images", [])
                     image_url = None
                     if images:
-                        # Prioritize large images if available
+                        # Get large images
                         large_images = [img for img in images if img.get("width", 0) > 800]
                         image_url = large_images[0]["url"] if large_images else images[0]["url"]
 
@@ -68,7 +66,7 @@ class Command(BaseCommand):
                         category = classifications[0].get("segment", {}).get("name", None)
 
                     if not category:
-                        continue  # Skip if category is null
+                        continue  # Skip if category is null this is done to avoid duplicate events
 
                     # Store or update the event
                     Event.objects.update_or_create(
@@ -83,7 +81,7 @@ class Command(BaseCommand):
                             "external_link": event_data["url"],
                             "api_source": "Ticketmaster",
                             "category": category,
-                            "image_url": image_url,  # Save image URL
+                            "image_url": image_url,
                         },
                     )
                     total_events += 1

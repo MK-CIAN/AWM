@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import Axios from "../services/Axios";
 import "../styles/ClosestEvents.css";
+import { useNavigate } from "react-router-dom";
 
+// EventPoint interface
 interface EventPoint {
   id: number;
   name: string;
@@ -15,20 +17,24 @@ interface EventPoint {
   image_url: string;
 }
 
+// ClosestEventsProps interface
 interface ClosestEventsProps {
   userLocation: [number, number] | null;
 }
 
+// ClosestEvents radius
 const RADIUS_KM = 5;
 
-const ClosestEvents: React.FC<ClosestEventsProps> = ({
-  userLocation,
-}) => {
+// ClosestEvents component
+const ClosestEvents: React.FC<ClosestEventsProps> = ({ userLocation }) => {
   const [events, setEvents] = useState<EventPoint[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<
     (EventPoint & { dates: string[] })[]
   >([]);
 
+  const navigate = useNavigate(); // React Router navigation hook
+
+  // Fetch events from the backend
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -42,7 +48,7 @@ const ClosestEvents: React.FC<ClosestEventsProps> = ({
     fetchEvents();
   }, []);
 
-  // Haversine formula to calculate distance between two lat/lon points
+  // Haversine Distance Function
   const haversineDistance = (
     lat1: number,
     lon1: number,
@@ -63,7 +69,7 @@ const ClosestEvents: React.FC<ClosestEventsProps> = ({
     return R * c;
   };
 
-  // Group events by name and location to avoid duplicates
+  // Group events by name and location to avoid duplicates of the same events
   const groupEvents = (events: EventPoint[]) => {
     const grouped: { [key: string]: EventPoint & { dates: string[] } } = {};
 
@@ -79,7 +85,7 @@ const ClosestEvents: React.FC<ClosestEventsProps> = ({
     return Object.values(grouped);
   };
 
-  // Filter events by radius and group them
+  // Filter events based on user location
   useEffect(() => {
     if (userLocation) {
       const [userLat, userLon] = userLocation;
@@ -98,6 +104,11 @@ const ClosestEvents: React.FC<ClosestEventsProps> = ({
     }
   }, [userLocation, events]);
 
+  // Handle redirection to event detail page
+  const handleRedirectToEvent = (eventId: number) => {
+    navigate(`/events/${eventId}`);
+  };
+
   return (
     <div className="closest-events-list">
       <h3>Events Near You!</h3>
@@ -106,7 +117,11 @@ const ClosestEvents: React.FC<ClosestEventsProps> = ({
           filteredEvents.map((event) => (
             <div className="event-card" key={event.id}>
               {event.image_url && (
-                <img src={event.image_url} alt={event.name} className="event-image" />
+                <img
+                  src={event.image_url}
+                  alt={event.name}
+                  className="event-image"
+                />
               )}
               <div className="event-details">
                 <h4>{event.name}</h4>
@@ -114,20 +129,16 @@ const ClosestEvents: React.FC<ClosestEventsProps> = ({
                 <div className="event-dates-scroll">
                   <ul>
                     {event.dates.map((date) => (
-                      <li key={date}>
-                        {new Date(date).toLocaleString()}
-                      </li>
+                      <li key={date}>{new Date(date).toLocaleString()}</li>
                     ))}
                   </ul>
                 </div>
-                <a
-                  href={event.external_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="more-info"
+                <button
+                  onClick={() => handleRedirectToEvent(event.id)}
+                  className="button"
                 >
                   More Info
-                </a>
+                </button>
               </div>
             </div>
           ))
