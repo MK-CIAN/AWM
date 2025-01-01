@@ -1,46 +1,59 @@
+version: '3.8'
+
 services:
   nginx:
     image: nginx:latest
+    platform: linux/amd64
     ports:
       - 84:80
     volumes:
-      - ./nginx/conf.d:/etc/ngnix/conf.d
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - frontend
+      - awm_django_app
 
   pgadmin4:
     image: dpage/pgadmin4
+    platform: linux/amd64
     ports:
       - 20080:80
     environment:
       PGADMIN_DEFAULT_EMAIL: c21755919@tudublin.ie
       PGADMIN_DEFAULT_PASSWORD: mypassword
-    #volumes:
-    #  - my_pgadmin4_data:/var/lib/postgresql/data
     depends_on:
       - postgis
-      - nginx
 
   postgis:
     image: kartoza/postgis:latest
+    platform: linux/amd64
     ports:
       - 25432:5432
     environment:
       POSTGRES_DB: gis
       POSTGRES_USER: docker
       POSTGRES_PASSWORD: docker
-    #volumes:
-    #  - my_first_spatialdb_data:/var/lib/postgresql/data
 
   awm_django_app:
     image: geodjango_tutorial_image
+    platform: linux/amd64
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
     ports:
       - 8001:8001
-    #build: .
-    command: ["python", "manage.py", "runserver", "0.0.0.0:8001"]
     volumes:
       - .:/app
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8001"]
     depends_on:
       - postgis
-      - nginx
-      - pgadmin4
+
+  frontend:
+    image: cianmk/frontend_image:latest
+    build:
+      context: ./frontend  # Build the React app
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    stdin_open: true
+    tty: true
+    depends_on:
+      - awm_django_app

@@ -17,6 +17,9 @@ RUN conda env create -f ENV.yml
 # RUN command should use the new environment
 SHELL [ "conda", "run", "-n", "awm_geo", "/bin/bash", "-c" ]
 
+# Install pip-only dependencies
+RUN pip install django-rest-knox
+
 RUN echo "conda activate awm_geo" >> ~/.bashrc
 SHELL ["/bin/bash", "--login", "-c"]
 
